@@ -1,4 +1,4 @@
-name: Parallel Build Unreal Engine Executables
+name: Compile Unreal Engine GPU Benchmark Executables
 
 on:
   push:
@@ -7,138 +7,55 @@ on:
 
 jobs:
   # -------------------------------------------------------------
-  # JOB 1: UNREAL ENGINE 1 EXE BUILD
-  # -------------------------------------------------------------
-  build-ue1:
-    name: Build UE1 Executable
-    runs-on: windows-2022
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Set up MSBuild
-      uses: microsoft/setup-msbuild@v2
-
-    - name: Compile UE1 C++ Source to Win32 EXE
-      run: |
-        echo "Compiling Unreal Engine 1 Core and Renderers..."
-        # Navigates to your UE1 source directory and compiles the source code project
-        # MSBuild.exe src/UE1/Unreal.sln /p:Configuration=Release /p:Platform=Win32
-        
-        # Output directory layout
-        mkdir -p dist/UE1/System
-        
-        # Example compile output simulation (creates the actual executable)
-        echo "Building executable binaries..."
-        echo "UE1-Game" > dist/UE1/System/Unreal.exe
-
-    - name: Upload UE1 Executable Binaries
-      uses: actions/upload-artifact@v4
-      with:
-        name: ue1-windows-exe
-        path: dist/UE1/
-
-  # -------------------------------------------------------------
-  # JOB 2: UNREAL ENGINE 2 EXE BUILD
-  # -------------------------------------------------------------
-  build-ue2:
-    name: Build UE2 Executable
-    runs-on: windows-2022
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Set up MSBuild
-      uses: microsoft/setup-msbuild@v2
-
-    - name: Compile UE2 C++ Source
-      run: |
-        echo "Compiling Unreal Engine 2.5 game executable..."
-        # MSBuild.exe src/UE2/Unreal2.sln /p:Configuration=Release /p:Platform=Win32
-        
-        mkdir -p dist/UE2/System
-        echo "UE2-Game" > dist/UE2/System/Unreal2.exe
-
-    - name: Upload UE2 Executable Binaries
-      uses: actions/upload-artifact@v4
-      with:
-        name: ue2-windows-exe
-        path: dist/UE2/
-
-  # -------------------------------------------------------------
-  # JOB 3: UNREAL ENGINE 3 EXE BUILD
-  # -------------------------------------------------------------
-  build-ue3:
-    name: Build UE3 Executable
-    runs-on: windows-2022
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Set up MSBuild
-      uses: microsoft/setup-msbuild@v2
-
-    - name: Compile UE3 / UDK Binaries
-      run: |
-        echo "Compiling UE3/UDK source files..."
-        # MSBuild.exe src/UE3/Development/Src/UE3.sln /p:Configuration="Release" /p:Platform="Win32"
-        
-        mkdir -p dist/UE3/Binaries/Win32
-        echo "UE3-Game" > dist/UE3/Binaries/Win32/UDK.exe
-
-    - name: Upload UE3 Executable Binaries
-      uses: actions/upload-artifact@v4
-      with:
-        name: ue3-windows-exe
-        path: dist/UE3/
-
-  # -------------------------------------------------------------
-  # JOB 4: UNREAL ENGINE 4 EXE BUILD
+  # COMPILE UNREAL ENGINE 4 GAME EXE
   # -------------------------------------------------------------
   build-ue4:
-    name: Build UE4 Executable
-    runs-on: windows-2022
+    name: Compile UE4 Benchmark EXE
+    runs-on: [self-hosted, windows] # Self-hosted runner with UE4 installed is required
     steps:
-    - name: Checkout Code
+    - name: Checkout Repository Code
       uses: actions/checkout@v4
 
-    - name: Build UE4 Project Executable via RunUAT
+    - name: Build and Package UE4 Executable
       run: |
-        echo "Running Unreal Build Tool & Automation Tool..."
-        # This compiles your C++ gameplay modules and generates the standalone Shipping Win64 .exe
-        # & "${env:UE4_ROOT}\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun -project="${{ github.workspace }}\UE4_Proj\UE4_Proj.uproject" -targetplatform=Win64 -clientconfig=Shipping -build -stage -archive -archivedirectory="${{ github.workspace }}\dist\UE4"
-        
-        # Fallback directory structure if local custom project:
-        mkdir -p dist/UE4/Binaries/Win64
-        echo "UE4-Game-Shipping" > dist/UE4/Binaries/Win64/UE4-Win64-Shipping.exe
+        echo "Starting compiling process via Unreal Automation Tool..."
+        # Calls the native packaging engine
+        & "${env:UE4_ROOT}\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun `
+          -project="${{ github.workspace }}\UE4_Project\Benchmark.uproject" `
+          -targetplatform=Win64 `
+          -clientconfig=Shipping `
+          -build -cook -stage -archive `
+          -archivedirectory="${{ github.workspace }}\dist\UE4"
 
-    - name: Upload UE4 Executable Binaries
+    - name: Upload Real UE4 Executable Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ue4-windows-exe
-        path: dist/UE4/
+        name: ue4-benchmark-exe
+        path: dist/UE4/WindowsNoEditor/
 
   # -------------------------------------------------------------
-  # JOB 5: UNREAL ENGINE 5 EXE BUILD
+  # COMPILE UNREAL ENGINE 5 GAME EXE
   # -------------------------------------------------------------
   build-ue5:
-    name: Build UE5 Executable
-    runs-on: windows-2022
+    name: Compile UE5 Benchmark EXE
+    runs-on: [self-hosted, windows] # Self-hosted runner with UE5 installed is required
     steps:
-    - name: Checkout Code
+    - name: Checkout Repository Code
       uses: actions/checkout@v4
 
-    - name: Build UE5 Project Executable via RunUAT
+    - name: Build and Package UE5 Executable
       run: |
-        echo "Running Unreal Automation Tool for UE5..."
-        # Compiles the clean shipping executable utilizing modern C++20 targets
-        # & "${env:UE5_ROOT}\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun -project="${{ github.workspace }}\UE5_Proj\UE5_Proj.uproject" -targetplatform=Win64 -clientconfig=Shipping -build -stage -archive -archivedirectory="${{ github.workspace }}\dist\UE5"
-        
-        mkdir -p dist/UE5/Binaries/Win64
-        echo "UE5-Game-Shipping" > dist/UE5/Binaries/Win64/UE5-Win64-Shipping.exe
+        echo "Starting compiling process via Unreal Automation Tool..."
+        # Calls the modern UE5 compilation toolchain (Nanite/Lumen support)
+        & "${env:UE5_ROOT}\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun `
+          -project="${{ github.workspace }}\UE5_Project\Benchmark.uproject" `
+          -targetplatform=Win64 `
+          -clientconfig=Shipping `
+          -build -cook -stage -archive `
+          -archivedirectory="${{ github.workspace }}\dist\UE5"
 
-    - name: Upload UE5 Executable Binaries
+    - name: Upload Real UE5 Executable Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ue5-windows-exe
-        path: dist/UE5/
+        name: ue5-benchmark-exe
+        path: dist/UE5/Windows/
